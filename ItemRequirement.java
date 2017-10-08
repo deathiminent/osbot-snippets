@@ -32,12 +32,21 @@ public class ItemRequirement {
         for (RequiredItem item : this.items) {
             int desiredAmount = item.getAmount();
             int charge = getItemCharge(item.getName());
+            List<Item> filteredList;
+            
+            // filtered list for item if it's noted
+            if (item.isNoted()) {
+                filteredList = itemList.stream()
+                        .filter(i -> (i != null && i.getName().toLowerCase().equals(item.getName().toLowerCase()) && i.isNote()))
+                        .collect(Collectors.toList());
+            }
+            else { // item isn't noted
+                filteredList = itemList.stream()
+                        .filter(i -> (i != null && i.getName().toLowerCase().equals(item.getName().toLowerCase())))
+                        .collect(Collectors.toList());
+            }
 
-            // filter the list to match items containing this item
-            List<Item> filteredList = itemList.stream()
-                    .filter(i -> (i != null && i.getName().toLowerCase().equals(item.getName().toLowerCase())))
-                    .collect(Collectors.toList());
-
+            // filtered list if the item isn't noted
             if (filteredList.size() > 0) {
                 // if the item we're checking for contains a charge/dose, check to
                 // see if we have an item with that charge/dose, up to (starting charge/dose + range)
@@ -49,8 +58,13 @@ public class ItemRequirement {
 
                     int x = 0;
                     do {
-                        // increase count by the number of occurrences
-                        itemCount += filteredList.size();
+                        // if we have the item and it's noted, increase by the quantity of the note
+                        if (filteredList.size() > 0 && item.isNoted()) {
+                            itemCount += filteredList.get(0).getAmount();
+                        }
+                        else { // increase count by the number of occurrences
+                            itemCount += filteredList.size();
+                        }
 
                         // remove the charge
                         while (itemName.charAt(openIndex + 1) != ')') {
@@ -121,19 +135,57 @@ public class ItemRequirement {
         private String name;
         private int amount;
         private int range;
+        private boolean noted;
 
+        /**
+         * Represents a required, single, un-noted item matching only this
+         * charge/dose, if it has one.
+         *
+         * @param name the name of the item
+         */
         public RequiredItem(String name) {
-            this(name, 1, 0);
+            this(name, 1, 0, false);
         }
 
+        /**
+         * Represents a required, un-noted item, of at least the specified quantity,
+         * matching only this charge/dose, if it has one.
+         *
+         * @param name the name of the item
+         * @param amount the amount of the item
+         */
         public RequiredItem(String name, int amount) {
-            this(name, amount, 0);
+            this(name, amount, 0, false);
         }
 
+        /**
+         * Represents a required, un-noted item, of at least the specified quantity,
+         * matching this item's charge/dose, if it has one, up to an additional
+         * value of the range.
+         *
+         * @param name the name of the item
+         * @param amount the amount of the item
+         * @param range the additional charges/doses to accept
+         */
         public RequiredItem(String name, int amount, int range) {
+            this(name, amount, range, false);
+        }
+
+        /**
+         * Represents a required, noted item, of at least the specified quantity,
+         * matching this item's charge/dose, if it has one, up to an additional
+         * value of the range.
+         *
+         * @param name the name of the item
+         * @param amount the amount of the item
+         * @param range the additional charges/doses to accept
+         * @param noted whether or not the item is noted
+         */
+        public RequiredItem(String name, int amount, int range, boolean noted) {
             this.name = name;
             this.amount = amount;
             this.range = range;
+            this.noted = noted;
         }
 
         public String getName() {
@@ -146,6 +198,10 @@ public class ItemRequirement {
 
         public int getRange() {
             return range;
+        }
+
+        public boolean isNoted() {
+            return noted;
         }
     }
 }
