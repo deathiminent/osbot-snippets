@@ -15,7 +15,7 @@ public class ItemRequirement {
     /**
      * If an item to check for has a charge or dose is in its name, e.g. Ring of
      * dueling(4), it will also check for the item with additional
-     * charges/doses, up to the value of SetupItem's range field.
+     * charges/doses, up to the value of RequiredItem's range field.
      * <p>
      * Example: item is Ring of dueling(4) with a range of 3
      * will match Ring of dueling(4), (5), (6), and (7)
@@ -29,7 +29,7 @@ public class ItemRequirement {
         HashMap<String, Integer> missingItems = new HashMap<>();
         List<Item> itemList = Arrays.asList(itemsToCheck); // list rep. of items to check against
 
-        for (RequiredItem item : items) {
+        for (RequiredItem item : this.items) {
             int desiredAmount = item.getAmount();
             int charge = getItemCharge(item.getName());
 
@@ -73,11 +73,11 @@ public class ItemRequirement {
                 }
                 else { // item has no charge, so we check for exact item name
                     int currentAmount = 0;
-                    // the item is stackable, so use the amount for the first occurrence (and should be only)
+                    // the item is stackable or we only have 1 occurrence, so get the amount
                     if (filteredList.size() == 1) {
                         currentAmount = filteredList.get(0).getAmount();
                     }
-                    else { // we use the number of occurrences if item isn't stackable
+                    else { // we have more than 1 occurrence, so the item probably isn't stackable
                         currentAmount = filteredList.size();
                     }
                     // if insufficient amount, add to list the item
