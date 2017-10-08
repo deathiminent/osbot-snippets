@@ -1,9 +1,5 @@
-package mmchinner;
-/**
- * Author: Deathiminent
- */
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.osbot.rs07.api.model.RS2Object;
@@ -18,30 +14,28 @@ public class AntiBan {
     private int maxActionBound = 0; // maximum time between actions
     private long nextExecuteTime;
 
+    private List<Action> defaultActions = Arrays.asList(Action.values());
+
     List<Action> actionList = new ArrayList<>();
 
     /**
-     * Creates the object with all actions to be performed.
+     * Creates the object with all default actions to be performed.
      *
-     * @param script script reference
+     * @param script         script reference
      * @param minActionBound minimum delay between anti ban actions
      * @param maxActionBound maximum delay between anti ban actions
      */
     public AntiBan(Script script, int minActionBound, int maxActionBound) {
-        this.script = script;
-        this.minActionBound = minActionBound;
-        this.maxActionBound = maxActionBound;
-        nextExecuteTime = System.currentTimeMillis() + random(minActionBound, maxActionBound);
-        addAllActions();
+        this(script, minActionBound, maxActionBound, Arrays.asList(Action.values()));
     }
 
     /**
      * Actions must be added manually.
      *
-     * @param script script reference
+     * @param script         script reference
      * @param minActionBound minimum delay between anti ban actions
      * @param maxActionBound maximum delay between anti ban actions
-     * @param actions the actions that should be performed
+     * @param actions        the actions that should be performed
      */
     public AntiBan(Script script, int minActionBound, int maxActionBound, List<Action> actions) {
         this.script = script;
@@ -65,7 +59,7 @@ public class AntiBan {
     /**
      * Performs a random action from the action list based off of the weighted
      * values.
-     *
+     * <br>
      * How it works: Creates an array the size of the cumulative weight
      * of the action list and then loops through the action list assigning each
      * index the value of the enum value. Then chooses a random number
@@ -120,7 +114,7 @@ public class AntiBan {
     }
 
     /**
-     * @param a the action to add
+     * @param a      the action to add
      * @param weight likeliness of this action to be performed
      */
     public void addAction(Action a, int weight) {
@@ -133,9 +127,7 @@ public class AntiBan {
      * Adds an occurrence of all Actions to the action list
      */
     public void addAllActions() {
-        for (Action action : Action.values()) {
-            actionList.add(action);
-        }
+        actionList = defaultActions;
     }
 
     public void clearActions() {
@@ -146,11 +138,13 @@ public class AntiBan {
      * Each action is weighted. Meaning the higher the weight, the more likely
      * that action is to be performed. If two actions have the same weight, they
      * are equally likely to be performed.
+     * <br>
+     * <br>
      *
-     * Default weights
-     * ---------------
-     * Move mouse: 3
-     * Rotate camera: 7
+     * Default weights<br>
+     * ------------------------<br>
+     * Move mouse: 3<br>
+     * Rotate camera: 7<br>
      * Right click object: 1
      */
     public enum Action {
