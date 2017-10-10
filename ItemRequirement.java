@@ -29,14 +29,15 @@ public class ItemRequirement {
         HashMap<String, Integer> missingItems = new HashMap<>();
         List<Item> itemList = Arrays.asList(itemsToCheck); // list rep. of items to check against
 
-        for (RequiredItem item : this.items) {
-            int desiredAmount = item.getAmount();
-            int charge = getItemCharge(item.getName());
+        for (RequiredItem itemToCheck : this.items) {
+            int desiredAmount = itemToCheck.getAmount();
+            int minCharge = getItemCharge(itemToCheck.getName());
+            int maxCharge = minCharge + itemToCheck.getRange();
             List<Item> filteredList;
-            String name = removeCharge(item.getName());
+            String name = removeCharge(itemToCheck.getName());
 
             // filtered list to match noted items
-            if (item.isNoted()) {
+            if (itemToCheck.isNoted()) {
                 filteredList = itemList.stream()
                         .filter(i -> (i != null && removeCharge(i.getName()).toLowerCase().equals(name.toLowerCase()) && i.isNote()))
                         .collect(Collectors.toList());
@@ -51,54 +52,27 @@ public class ItemRequirement {
             if (filteredList.size() > 0) {
                 // if the item we're checking for contains a charge/dose, check to
                 // see if we have an item with that charge/dose, up to (starting charge/dose + range)
-                if (charge > 0) {
+                if (minCharge > 0) {
                     int itemCount = 0; // keep track of how many items we have
 
-                    StringBuilder itemName = new StringBuilder(item.getName());
-                    int openIndex = itemName.indexOf("(");
+                    for (Item t_item : filteredList) {
+                        int itemCharge = getItemCharge(t_item.getName());
 
-                    int x = 0;
-                    do {
-                        // recheck the filtered list and only add items if the charge is at least the minimum
-                        if (filteredList.size() > 0 && getItemCharge(filteredList.get(0).getName()) >= charge) {
-                            // if we are matching notes and the item is noted, increase by the stack amount
-                            if (item.isNoted()) {
-                                itemCount += filteredList.get(0).getAmount();
-                            }
-                            else // we aren't looking for noted items
-                            {
-                                if (filteredList.size() == 1) { // only 1 occurrence so it might be stackable
-                                    itemCount += filteredList.get(0).getAmount();
-                                }
-                                else { // it's probably not stackable, so get the # of occurrences
-                                    itemCount += filteredList.size();
+                        if (itemCharge >= minCharge && itemCharge <= maxCharge) {
+                            if (itemToCheck.isNoted()) { // we're only checking for noted items
+                                if (t_item.isNote()) {
+                                    itemCount += t_item.getAmount();
                                 }
                             }
+                            else {
+                                itemCount += t_item.getAmount();
+                            }
                         }
-                        // remove the charge
-                        while (itemName.charAt(openIndex + 1) != ')') {
-                            itemName.deleteCharAt(openIndex + 1);
-                        }
-                        // insert the next charge
-                        itemName.insert(openIndex + 1, String.valueOf(charge + ++x));
-
-                        // update the filter for the next item check
-                        if (item.isNoted()) {
-                            filteredList = itemList.stream()
-                                    .filter(i -> (i != null && i.getName().toLowerCase().equals(itemName.toString().toLowerCase()) && i.isNote()))
-                                    .collect(Collectors.toList());
-                        }
-                        else {
-                            filteredList = itemList.stream()
-                                    .filter(i -> (i != null && i.getName().toLowerCase().equals(itemName.toString().toLowerCase()) && !i.isNote()))
-                                    .collect(Collectors.toList());
-                        }
-
-                    } while (x < item.getRange());
+                    }
 
                     // add to list the missing amount of items
                     if (itemCount < desiredAmount) {
-                        missingItems.put(item.getName(), desiredAmount - itemCount);
+                        missingItems.put(itemToCheck.getName(), desiredAmount - itemCount);
                     }
                 }
                 else { // item has no charge, so we check for exact item name
@@ -113,13 +87,14 @@ public class ItemRequirement {
                     // if insufficient amount, add to list the item
                     // and the missing amount
                     if (currentAmount < desiredAmount) {
-                        missingItems.put(item.getName(), desiredAmount - currentAmount);
+                        missingItems.put(itemToCheck.getName(), desiredAmount - currentAmount);
                     }
                 }
             }
-            else { // we don't have the item, so we're missing all
-                missingItems.put(item.getName(), desiredAmount);
-            }
+            else // we don't have the item
+             if (desiredAmount > 0) {
+                    missingItems.put(itemToCheck.getName(), desiredAmount);
+                }
         }
 
         return missingItems;
